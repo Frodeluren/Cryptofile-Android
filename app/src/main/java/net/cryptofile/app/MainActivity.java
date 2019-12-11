@@ -20,13 +20,13 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.navigation.NavigationView;
 
 import net.cryptofile.app.data.FileService;
+import net.cryptofile.app.ui.fileDownload.FileDownloadActivity;
 import net.cryptofile.app.ui.key.KeyViewModel;
-import net.cryptofile.app.ui.fileDownload.DownloadDialog;
 import net.cryptofile.app.ui.fileupload.FileUploadActivity;
 import net.cryptofile.app.ui.files.FileViewModel;
 
 
-public class MainActivity extends AppCompatActivity implements DownloadDialog.DownloadDialogListener {
+public class MainActivity extends AppCompatActivity {
 
     private AppBarConfiguration mAppBarConfiguration;
 
@@ -70,7 +70,7 @@ public class MainActivity extends AppCompatActivity implements DownloadDialog.Do
                 e.printStackTrace();
             }
 
-            downloadButton.setOnClickListener(view -> openDownloadDialog());
+            downloadButton.setOnClickListener(this::downloadFile);
 
             uploadButton.setOnClickListener(this::uploadFile);
 
@@ -138,21 +138,15 @@ public class MainActivity extends AppCompatActivity implements DownloadDialog.Do
         startActivity(new Intent(this, FileUploadActivity.class));
     }
 
+    private void downloadFile(View view) {
+        closeFABMenu();
+        startActivity(new Intent(this, FileDownloadActivity.class));
+    }
+
+
     //TODO send a request to restAPI server to confirm connection. Change return statement.
     private boolean loginCheck() {
 
         return false;
-    }
-
-    private void openDownloadDialog() {
-        closeFABMenu();
-        DownloadDialog downloadDialog = new DownloadDialog();
-        downloadDialog.show(getSupportFragmentManager(), "download dialog");
-
-    }
-
-    @Override
-    public void applyText(String uuid) {
-        DownloadDialog downloadDialog = new DownloadDialog();
     }
 }
