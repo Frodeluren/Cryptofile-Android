@@ -143,12 +143,13 @@ public class FileUploadActivity extends AppCompatActivity {
             protected Void doInBackground(Void... voids) {
                 try {
                     InputStream inputStream = getContentResolver().openInputStream(selectedFile);
-                    byte[] encryptedBytes = CryptoService.encrypt(key, IOUtils.toByteArray(inputStream));
+                    //byte[] encryptedBytes = CryptoService.encrypt(key, IOUtils.toByteArray(inputStream));
+
 
                     // Write selected file to temporary file
-                    tempFile = new File(TEMP_FILE_PATH);
-                    OutputStream outputStream = new FileOutputStream(tempFile);
-                    outputStream.write(encryptedBytes);
+                    tempFile = CryptoService.encrypt(key, inputStream);
+                    //OutputStream outputStream = new FileOutputStream(tempFile);
+                    //outputStream.write(encryptedBytes);
                     inputStream.close();
                 } catch (Exception e) {
                     e.printStackTrace();
