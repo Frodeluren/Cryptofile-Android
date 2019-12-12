@@ -204,6 +204,8 @@ public class UploadTask extends AsyncTask {
 
             int readedBytes = fis.read(buffer, 0, bufferSize);
 
+            request.write(iv);
+
             while (readedBytes > 0){
                 count++;
                 request.write(buffer, 0, bufferSize);

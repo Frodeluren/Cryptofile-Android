@@ -23,6 +23,7 @@ import javax.crypto.CipherInputStream;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.GCMParameterSpec;
+import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 public class CryptoService {
@@ -143,13 +144,14 @@ public class CryptoService {
     }
 
     public static byte[] decrypt(SecretKey key, byte[] encryptedBytes) throws Exception {
-        byte[] iv = Arrays.copyOf(encryptedBytes, 12);
-        byte[] encryptedFileBytes = Arrays.copyOfRange(encryptedBytes, 12, encryptedBytes.length);
+        byte[] iv = Arrays.copyOf(encryptedBytes, 16);
+        byte[] encryptedFileBytes = Arrays.copyOfRange(encryptedBytes, 16, encryptedBytes.length);
 
         System.out.println("IV decrypt: " + new String(iv, StandardCharsets.UTF_8));
 
         final Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding"); //"AES/GCM/NoPadding");
-        final GCMParameterSpec spec = new GCMParameterSpec(128, iv);
+        //final GCMParameterSpec spec = new GCMParameterSpec(128, iv);
+        final IvParameterSpec spec = new IvParameterSpec(iv);
 
         cipher.init(Cipher.DECRYPT_MODE, key, spec);
         return cipher.doFinal(encryptedFileBytes);
