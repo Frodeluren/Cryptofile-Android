@@ -148,7 +148,7 @@ public class CryptoService {
 
         System.out.println("IV decrypt: " + new String(iv, StandardCharsets.UTF_8));
 
-        final Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+        final Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding"); //"AES/GCM/NoPadding");
         final GCMParameterSpec spec = new GCMParameterSpec(128, iv);
 
         cipher.init(Cipher.DECRYPT_MODE, key, spec);
