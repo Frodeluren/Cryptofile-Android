@@ -178,6 +178,7 @@ public class UploadTask extends AsyncTask {
         super.onProgressUpdate(object);
         //System.out.println("Progress: " + object[0]);
         Log.println(Log.INFO, TAG, "Uploading.. " + object[0] + "%");
+        delegate.taskProgress((double) object[0]);
     }
 
     @Override

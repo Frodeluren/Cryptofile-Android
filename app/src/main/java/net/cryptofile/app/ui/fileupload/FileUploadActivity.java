@@ -106,6 +106,11 @@ public class FileUploadActivity extends AppCompatActivity {
                             e.printStackTrace();
                         }
                     }
+
+                    @Override
+                    public void taskProgress(double progress) {
+                        statusText.setText("Uploading..." + progress + "%");
+                    }
                 };
 
                 // Generate task AsyncTask
@@ -153,116 +158,6 @@ public class FileUploadActivity extends AppCompatActivity {
         }
     }
 
-
-    @SuppressLint("StaticFieldLeak")
-    public void encryptFile() {
-        new AsyncTask<Void, Void, Void>() {
-            File tempFile;
-
-            @Override
-            protected void onPreExecute() {
-                super.onPreExecute();
-                try {
-                    String ft = new Tika().detect(filePath); // Detects filetype
-                    if (!(ft.isEmpty() || ft.matches("application/octet-stream"))) {
-                        detectedFiletypeText.setText(ft.split("/")[1]);
-                    }
-
-                    statusText.setText("Encrypting...");
-                    progressBar.setVisibility(View.VISIBLE);
-
-                    key = CryptoService.generateKey();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-
-            }
-
-            @Override
-            protected Void doInBackground(Void... voids) {
-                try {
-                    InputStream inputStream = getContentResolver().openInputStream(selectedFile);
-                    //byte[] encryptedBytes = CryptoService.encrypt(key, IOUtils.toByteArray(inputStream));
-
-
-                    // Write selected file to temporary file
-                    tempFile = CryptoService.encrypt(key, inputStream);
-                    //OutputStream outputStream = new FileOutputStream(tempFile);
-                    //outputStream.write(encryptedBytes);
-                    inputStream.close();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-
-                return null;
-            }
-
-            @Override
-            protected void onPostExecute(Void aVoid) {
-                super.onPostExecute(aVoid);
-                statusText.setText("Encrypted");
-                progressBar.setVisibility(View.GONE);
-
-                fileAsBytes = tempFile;
-                fileLocationText.setText(filePath.substring(filePath.lastIndexOf("/") + 1));
-
-            }
-        }.execute();
-    }
-
-
-    @SuppressLint("StaticFieldLeak")
-    public void submitFile(File file, String title, String filetype) {
-        new AsyncTask<Void, Void, Result>() {
-
-            @Override
-            protected Result doInBackground(Void... voids) {
-                try {
-                    response = mainRepository.uploadFile(file, title, filetype);
-                    System.out.println(response.toString());
-                    if (response instanceof Result.Success) {
-                        returnedUuid = ((Result.Success<String>) response).getData();
-                        System.out.println("Recieved ID: " + returnedUuid);
-                    }
-                    return response;
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    return new Result.Error(e);
-                }
-            }
-
-            @Override
-            protected void onPostExecute(Result result) {
-                if (result instanceof Result.Success) {
-                    System.out.println("File submitted");
-
-                    statusText.setText("Uploaded");
-                    progressBar.setVisibility(View.GONE);
-
-                    try {
-                        PrintWriter writer = new PrintWriter(file);
-                        writer.print("");
-                        writer.close();
-                        redirect();
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-
-                } else {
-                    System.out.println("File not submitted");
-
-                    statusText.setText("Upload failed");
-                    progressBar.setVisibility(View.GONE);
-
-                    try {
-                        redirect();
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-        }.execute();
-    }
 
     private void redirect() throws Exception {
         if (response instanceof Result.Success) {
