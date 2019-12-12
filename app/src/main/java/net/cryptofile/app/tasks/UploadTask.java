@@ -44,12 +44,14 @@ public class UploadTask extends AsyncTask {
     private SecretKey secretKey;
     private CipherInputStream cipherInputStream;
     private DataInputStream dataInputStream;
+    private TaskDelegate delegate;
 
 
 
-    public UploadTask(String keyLocation, String password) {
+    public UploadTask(String keyLocation, String password, TaskDelegate delegate) {
         this.keyLocation = keyLocation;
         this.password = password.toCharArray();
+        this.delegate = delegate;
 
         try {
             if (!(new File(keyLocation).exists())) {
@@ -188,6 +190,7 @@ public class UploadTask extends AsyncTask {
                 FileService.addFile(uuid, title, filetype);
                 // Make notification say that the upload successed
                 //Toast.makeText(, "File successfully uploaded", Toast.LENGTH_LONG);
+                delegate.taskCompletionResult((Result.Success) object);
 
             }else {
                 // Make notification say that the upload failed

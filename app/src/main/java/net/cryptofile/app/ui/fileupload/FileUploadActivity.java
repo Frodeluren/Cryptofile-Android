@@ -22,6 +22,7 @@ import net.cryptofile.app.data.FileService;
 import net.cryptofile.app.data.MainRepository;
 import net.cryptofile.app.data.Result;
 import net.cryptofile.app.data.ServerDataSource;
+import net.cryptofile.app.tasks.TaskDelegate;
 import net.cryptofile.app.tasks.UploadTask;
 
 import org.apache.tika.Tika;
@@ -68,7 +69,7 @@ public class FileUploadActivity extends AppCompatActivity {
         TEMP_FILE_PATH = getCacheDir() + "/uploadfile.tmp";
         String keyStorePath = getFilesDir() + "/cryptokeys.bks";
         String password = "password";
-        UploadTask uploadTask = new UploadTask(keyStorePath, password);
+
 
         // Initialize page components
         final Button selectFilebutton = findViewById(R.id.selectUploadFilebutton);
@@ -95,6 +96,21 @@ public class FileUploadActivity extends AppCompatActivity {
             progressBar.setVisibility(View.VISIBLE);
 
             try {
+                TaskDelegate taskDelegate = new TaskDelegate() {
+                    @Override
+                    public void taskCompletionResult(Result result) {
+                        try {
+                            response = result;
+                            redirect();
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
+                };
+
+                // Generate task AsyncTask
+                UploadTask uploadTask = new UploadTask(keyStorePath, password, taskDelegate);
+
                 InputStream inputStream = getContentResolver().openInputStream(selectedFile);
                 uploadTask.execute(inputStream, titleInput.getText().toString(), detectedFiletypeText.getText().toString());
             } catch (FileNotFoundException e) {
@@ -250,8 +266,8 @@ public class FileUploadActivity extends AppCompatActivity {
 
     private void redirect() throws Exception {
         if (response instanceof Result.Success) {
-            CryptoService.storeKey(key, returnedUuid);
-            FileService.addFile(returnedUuid, titleInput.getText().toString(), detectedFiletypeText.getText().toString());
+            //CryptoService.storeKey(key, returnedUuid);
+            //FileService.addFile(returnedUuid, titleInput.getText().toString(), detectedFiletypeText.getText().toString());
             Toast.makeText(this, "File successfully uploaded", Toast.LENGTH_LONG).show();
             startActivity(new Intent(this, MainActivity.class));
         } else {
