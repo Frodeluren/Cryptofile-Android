@@ -29,8 +29,8 @@ public class CryptoService {
     private static final String TAG = "CryptoService";
     private static KeyStore keyStore;
     private static char[] password = "password".toCharArray();
-    private static String keyLocation = "/data/data/net.cryptofile.app/cryptokeys.bks"; // getFilesdir don't work in static classes
-    private static String cacheFileLocation = "/data/data/net.cryptofile.app//cache/uploadfile.tmp";
+    private static String keyLocation = "/data/data/net.cryptofile.app/files/cryptokeys.bks"; // getFilesdir don't work in static classes
+    private static String cacheFileLocation = "/data/data/net.cryptofile.app/cache/uploadfile.tmp";
     private static String type = KeyStore.getDefaultType();
     public static int MAX_BUFFER_SIZE = 1024000 * 15;
 

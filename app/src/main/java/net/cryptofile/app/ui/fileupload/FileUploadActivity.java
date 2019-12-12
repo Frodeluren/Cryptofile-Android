@@ -22,11 +22,13 @@ import net.cryptofile.app.data.FileService;
 import net.cryptofile.app.data.MainRepository;
 import net.cryptofile.app.data.Result;
 import net.cryptofile.app.data.ServerDataSource;
+import net.cryptofile.app.tasks.UploadTask;
 
 import org.apache.tika.Tika;
 import org.apache.tika.io.IOUtils;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -60,9 +62,15 @@ public class FileUploadActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.file_upload_activity);
 
-        mainRepository = new MainRepository(new ServerDataSource());
-        TEMP_FILE_PATH = getCacheDir() + "/uploadfile.tmp";
+        //mainRepository = new MainRepository(new ServerDataSource());
 
+        // Stuff that could be picked up from settings
+        TEMP_FILE_PATH = getCacheDir() + "/uploadfile.tmp";
+        String keyStorePath = getFilesDir() + "/cryptokeys.bks";
+        String password = "password";
+        UploadTask uploadTask = new UploadTask(keyStorePath, password);
+
+        // Initialize page components
         final Button selectFilebutton = findViewById(R.id.selectUploadFilebutton);
         titleInput = findViewById(R.id.textInputEditText);
         fileLocationText = findViewById(R.id.textViewFilelocation);
@@ -86,8 +94,16 @@ public class FileUploadActivity extends AppCompatActivity {
             statusText.setText("Uploading...");
             progressBar.setVisibility(View.VISIBLE);
 
-            submitFile(fileAsBytes, titleInput.getText().toString(), detectedFiletypeText.getText().toString());
+            try {
+                InputStream inputStream = getContentResolver().openInputStream(selectedFile);
+                uploadTask.execute(inputStream, titleInput.getText().toString(), detectedFiletypeText.getText().toString());
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            }
+            //uploadTask.getStatus().equals(AsyncTask.Status.FINISHED);
+            //submitFile(fileAsBytes, titleInput.getText().toString(), detectedFiletypeText.getText().toString());
         });
+
     }
 
     @Override
@@ -102,7 +118,14 @@ public class FileUploadActivity extends AppCompatActivity {
                     filePath = selectedFile.getPath();
 
                     if (filePath != null) {
-                        encryptFile();
+                        String ft = new Tika().detect(filePath); // Detects filetype
+                        if (!(ft.isEmpty() || ft.matches("application/octet-stream"))) {
+                            detectedFiletypeText.setText(ft.split("/")[1]);
+                        }
+                        fileLocationText.setText(filePath.substring(filePath.lastIndexOf("/") + 1));
+
+                        //statusText.setText("Encrypting...");
+                        //progressBar.setVisibility(View.VISIBLE);
                     } else {
                         System.out.println("Path is null!");
                     }

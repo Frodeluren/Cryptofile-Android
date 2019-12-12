@@ -16,6 +16,9 @@ public class Result<T> {
         } else if (this instanceof Result.Error) {
             Result.Error error = (Result.Error) this;
             return "Error[exception=" + error.getError().toString() + "]";
+        } else if (this instanceof Result.MemoryError) {
+            Result.MemoryError error = (Result.MemoryError) this;
+            return "Error[exception=" + error.getError().toString() + "]";
         }
         return "";
     }
@@ -42,6 +45,18 @@ public class Result<T> {
         }
 
         public Exception getError() {
+            return this.error;
+        }
+    }
+
+    public final static class MemoryError extends Result {
+        private OutOfMemoryError error;
+
+        public MemoryError(OutOfMemoryError error) {
+            this.error = error;
+        }
+
+        public OutOfMemoryError getError() {
             return this.error;
         }
     }
