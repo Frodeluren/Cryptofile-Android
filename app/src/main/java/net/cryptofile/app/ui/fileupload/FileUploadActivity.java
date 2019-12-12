@@ -48,13 +48,14 @@ public class FileUploadActivity extends AppCompatActivity {
     TextInputEditText titleInput;
 
     String returnedUuid;
+    String stageString;
 
     MainRepository mainRepository;
     Result response;
     SecretKey key;
     String filePath;
     Uri selectedFile;
-    String TEMP_FILE_PATH;
+    String CACHE_PATH;
 
     TextView statusText;
     ProgressBar progressBar;
@@ -66,7 +67,7 @@ public class FileUploadActivity extends AppCompatActivity {
         //mainRepository = new MainRepository(new ServerDataSource());
 
         // Stuff that could be picked up from settings
-        TEMP_FILE_PATH = getCacheDir() + "/uploadfile.tmp";
+        CACHE_PATH = getCacheDir().getPath();
         String keyStorePath = getFilesDir() + "/cryptokeys.bks";
         String password = "password";
 
@@ -108,13 +109,18 @@ public class FileUploadActivity extends AppCompatActivity {
                     }
 
                     @Override
-                    public void taskProgress(double progress) {
-                        statusText.setText("Uploading..." + progress + "%");
+                    public void taskProgress(int progress) {
+                        statusText.setText(stageString + progress + "%");
+                    }
+
+                    @Override
+                    public void taskStage(String stage) {
+                        stageString = stage;
                     }
                 };
 
                 // Generate task AsyncTask
-                UploadTask uploadTask = new UploadTask(keyStorePath, password, taskDelegate);
+                UploadTask uploadTask = new UploadTask(CACHE_PATH, keyStorePath, password, taskDelegate);
 
                 InputStream inputStream = getContentResolver().openInputStream(selectedFile);
                 uploadTask.execute(inputStream, titleInput.getText().toString(), detectedFiletypeText.getText().toString());

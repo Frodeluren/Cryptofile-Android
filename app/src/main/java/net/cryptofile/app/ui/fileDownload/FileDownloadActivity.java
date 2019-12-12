@@ -148,7 +148,7 @@ public class FileDownloadActivity extends AppCompatActivity {
 
 
                 } catch (Exception e) {
-                    Toast.makeText(getParent(), "Enter a valid UUID or UUID with key", Toast.LENGTH_LONG);
+                    //Toast.makeText(, "Enter a valid UUID or UUID with key", Toast.LENGTH_LONG).show();
                     response = new Result.Error(e);
                     e.printStackTrace();
                 }
