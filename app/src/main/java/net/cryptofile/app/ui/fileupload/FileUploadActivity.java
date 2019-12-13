@@ -1,9 +1,7 @@
 package net.cryptofile.app.ui.fileupload;
 
-import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
@@ -17,42 +15,28 @@ import com.google.android.material.textfield.TextInputEditText;
 
 import net.cryptofile.app.MainActivity;
 import net.cryptofile.app.R;
-import net.cryptofile.app.data.CryptoService;
-import net.cryptofile.app.data.FileService;
-import net.cryptofile.app.data.MainRepository;
 import net.cryptofile.app.data.Result;
-import net.cryptofile.app.data.ServerDataSource;
 import net.cryptofile.app.tasks.TaskDelegate;
 import net.cryptofile.app.tasks.UploadTask;
 
 import org.apache.tika.Tika;
-import org.apache.tika.io.IOUtils;
 
-import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.PrintWriter;
-
-import javax.crypto.SecretKey;
+import java.text.DecimalFormat;
 
 public class FileUploadActivity extends AppCompatActivity {
 
     private static final int REQUEST_GET_SINGLE_FILE = 1;
 
-    File fileAsBytes = null;
     TextInputEditText detectedFiletypeText;
     TextView fileLocationText;
     Button submitBtn;
     TextInputEditText titleInput;
 
-    String returnedUuid;
     String stageString;
 
-    MainRepository mainRepository;
     Result response;
-    SecretKey key;
     String filePath;
     Uri selectedFile;
     String CACHE_PATH;
@@ -63,8 +47,6 @@ public class FileUploadActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.file_upload_activity);
-
-        //mainRepository = new MainRepository(new ServerDataSource());
 
         // Stuff that could be picked up from settings
         CACHE_PATH = getCacheDir().getPath();
@@ -96,6 +78,8 @@ public class FileUploadActivity extends AppCompatActivity {
             statusText.setText("Uploading...");
             progressBar.setVisibility(View.VISIBLE);
 
+
+
             try {
                 TaskDelegate taskDelegate = new TaskDelegate() {
                     @Override
@@ -109,8 +93,11 @@ public class FileUploadActivity extends AppCompatActivity {
                     }
 
                     @Override
-                    public void taskProgress(int progress) {
-                        statusText.setText(stageString + progress + "%");
+                    public void taskProgress(float progress) {
+
+                        DecimalFormat df = new DecimalFormat();
+                        df.setMaximumFractionDigits(1);
+                        statusText.setText(stageString + df.format(progress) + "%");
                     }
 
                     @Override

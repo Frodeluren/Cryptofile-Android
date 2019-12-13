@@ -3,15 +3,11 @@ package net.cryptofile.app.tasks;
 import android.os.AsyncTask;
 import android.security.keystore.KeyProperties;
 import android.util.Log;
-import android.view.Surface;
 
 import net.cryptofile.app.data.FileService;
 import net.cryptofile.app.data.Result;
 
-import org.apache.tika.io.IOUtils;
-
 import java.io.BufferedReader;
-import java.io.DataInput;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
@@ -48,17 +44,20 @@ public class UploadTask extends AsyncTask {
     private CipherInputStream cipherInputStream;
     private DataInputStream dataInputStream;
     private TaskDelegate delegate;
-    private String stageString;
 
     File normalFile;
     File encryptedFile;
 
+    long startTime;
+    float prevProgress;
 
     public UploadTask(String cachePath, String keyLocation, String password, TaskDelegate delegate) {
         this.cachePath = cachePath;
         this.keyLocation = keyLocation;
         this.password = password.toCharArray();
         this.delegate = delegate;
+
+        startTime = System.currentTimeMillis();
 
         try {
             if (!(new File(keyLocation).exists())) {
@@ -94,20 +93,18 @@ public class UploadTask extends AsyncTask {
 
         try {
             int progress = 0;
-            stageString = "Writing file to cache... ";
+            delegate.taskStage("Writing file to cache... ");
             normalFile = new File(cachePath + "/normalFile.tmp");
             FileOutputStream  fos = new FileOutputStream(normalFile);
 
             int fileSize = inputStream.available();
-            int count = 0;
             int bufferSize = 1024;
             byte[] buffer = new byte[bufferSize];
             int b;
             while ((b = inputStream.read(buffer)) != -1){
-                count++;
                 fos.write(buffer, 0, b);
-                progress = 100 * (bufferSize*count)/fileSize;
-                publishProgress(progress, stageString);
+                progress = progress + b;// 100 * (bufferSize*count)/fileSize;
+                publishProgress(progress, fileSize);
             }
 
             inputStream.close();
@@ -117,42 +114,30 @@ public class UploadTask extends AsyncTask {
             e.printStackTrace();
         }
 
-        /*
-        try {
-
-
-            secretKey = generateKey();
-            cipherInputStream = getCipherStream(secretKey, inputStream);
-            //dataInputStream = new DataInputStream(cipherInputStream);
-        } catch (Exception e){
-            Log.println(Log.ERROR, TAG, "Failed to generate key or cipherstream: " + e.toString());
-        }
-
-         */
 
         // Write encrypted file
         try {
             int progress = 0;
-            stageString = "Encrypting... ";
-            publishProgress(progress, stageString);
+            delegate.taskStage("Encrypting... ");
+
 
             secretKey = generateKey();
             CipherInputStream cis = getCipherStream(secretKey , new FileInputStream(normalFile));
             encryptedFile = new File(cachePath + "/encryptedFile.tmp");
             FileOutputStream fos = new FileOutputStream(encryptedFile);
 
-            int fileSize = (int) normalFile.length(); //cis.available();
-            int count = 0;
+            int fileSize = (int) normalFile.length(); // cis.available();
+            //publishProgress(progress, fileSize);
 
             int bufferSize =  64 * 1024;
             byte[] buffer = new byte[bufferSize];
 
             int read;
             while ((read = cis.read(buffer)) != -1){
-                count++;
+
                 fos.write(buffer, 0, read);
-                progress = 100 * (bufferSize*count)/fileSize;
-                publishProgress(progress, stageString);
+                progress = progress + read; //100 * (bufferSize*count)/fileSize;
+                publishProgress(progress, fileSize);
             }
 
 
@@ -162,6 +147,8 @@ public class UploadTask extends AsyncTask {
             } else {
                 Log.println(Log.ERROR, TAG, "File cache failed to be deleted.");
             }
+
+
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -190,14 +177,14 @@ public class UploadTask extends AsyncTask {
             request.writeBytes("Content-Type: application/octet-stream\r\n\r\n");
 
             // Upload encrypted file
-            stageString = "Uploading... ";
+            delegate.taskStage("Uploading... ");
             int progress = 0;
-            int count = 0;
-            publishProgress(progress, stageString);
+
             FileInputStream fis = new FileInputStream(encryptedFile);
 
             int bytesAvailable = fis.available();
             int fileSize = bytesAvailable;
+            publishProgress(progress, fileSize);
             int maxBufferSize = 4096;
             int bufferSize = Math.min(bytesAvailable, maxBufferSize);
             byte[] buffer = new byte[bufferSize];
@@ -207,14 +194,13 @@ public class UploadTask extends AsyncTask {
             request.write(iv);
 
             while (readedBytes > 0){
-                count++;
                 request.write(buffer, 0, bufferSize);
                 bytesAvailable = fis.available();
                 bufferSize = Math.min(bytesAvailable, maxBufferSize);
                 readedBytes = fis.read(buffer, 0, bufferSize);
 
-                progress = 100 * (bufferSize*count)/fileSize;
-                publishProgress(progress, stageString);
+                progress = progress + readedBytes; //100 * (bufferSize*count)/fileSize;
+                publishProgress(progress, fileSize);
             }
 
             if (encryptedFile.delete()) {
@@ -222,36 +208,7 @@ public class UploadTask extends AsyncTask {
             } else {
                 Log.println(Log.ERROR, TAG, "Encrypted file cache failed to be deleted.");
             }
-            /*
-            // Sending file as buffered bytes
-            int availableBytes =  inputStream.available();
 
-            System.out.println("Size: " + availableBytes);
-
-            int fileSize = availableBytes;
-            int progress = 0;
-            int maxBufferSize = 4 * 1024;
-            int bufferSize = Math.min(availableBytes, maxBufferSize);
-            byte[] buffer = new byte[bufferSize];
-            dataInputStream.readFully(buffer, 0, bufferSize);
-            request.write(iv);
-            while (bufferSize > 0) {
-                try {
-                    request.write(buffer, 0, bufferSize);
-                    availableBytes = dataInputStream.available();
-                    bufferSize = Math.min(availableBytes, maxBufferSize);
-                    dataInputStream.readFully(buffer, 0, bufferSize);
-                } catch (OutOfMemoryError e){
-                    e.printStackTrace();
-                    return new Result.MemoryError(e);
-                }
-
-                progress = progress + maxBufferSize;
-                double status = 100 * progress/fileSize;
-                publishProgress(status);
-            }
-
-             */
 
             request.writeBytes("\r\n");
 
@@ -284,10 +241,18 @@ public class UploadTask extends AsyncTask {
     @Override
     protected void onProgressUpdate(Object[] object) {
         super.onProgressUpdate(object);
-        //System.out.println("Progress: " + object[0]);
-        Log.println(Log.INFO, TAG, stageString + object[0] + "%");
-        delegate.taskStage((String) object[1]);
-        delegate.taskProgress((int) object[0]);
+
+        float progress = ((float) (int) object[0] / (float) (int) object[1]) * 100.0f;
+
+        long currentTime = System.currentTimeMillis();
+        if ((currentTime - startTime > 250) && (progress != prevProgress)) {
+
+            Log.println(Log.INFO, TAG, "Progress: " + object[0] + "/" + object[1]);
+            prevProgress = progress;
+            delegate.taskProgress(progress);
+            startTime = currentTime;
+        }
+
     }
 
     @Override
@@ -321,6 +286,8 @@ public class UploadTask extends AsyncTask {
         final Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");   //"AES/GCM/NoPadding");
         cipher.init(Cipher.ENCRYPT_MODE, key);
         iv = cipher.getIV();
+
+        System.out.println("Encrypt IV: " + new String(iv, StandardCharsets.UTF_8));
 
         return new CipherInputStream(inputStream, cipher);
     }

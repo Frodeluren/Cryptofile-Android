@@ -3,9 +3,9 @@ package net.cryptofile.app.tasks;
 import net.cryptofile.app.data.Result;
 
 public interface TaskDelegate {
-    public void taskCompletionResult(Result result);
+    void taskCompletionResult(Result result);
 
-    public void taskProgress(int progress);
+    void taskProgress(float progress);
 
-    public void taskStage(String stage);
+    void taskStage(String stage);
 }
